@@ -53,6 +53,23 @@ jobs:
       - name: Publish
         run: npm publish
 
+      - name: Point schema dist-tags at this version
+        # Each schema version tag (e.g. uat-fix44-2026-08-03-25a722a) becomes an npm dist-tag
+        # pointing at the newest release that contains that schema version. Needs the
+        # "npm dist-tag" action on the trusted publisher. The registry may take a few minutes
+        # to expose a freshly published version, hence the retries.
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          for tag in $(pnpm --silent tags --names); do
+            for attempt in $(seq 1 10); do
+              if npm dist-tag add "${name}@${version}" "${tag}"; then break; fi
+              if [ "${attempt}" = 10 ]; then echo "::error::could not set dist-tag ${tag}"; exit 1; fi
+              echo "retrying in 30s (${attempt}/10)"; sleep 30
+            done
+          done
+          npm dist-tag ls "${name}"
+
       - name: Summary
         run: |
           name="$(node -p "require('./package.json').name")"

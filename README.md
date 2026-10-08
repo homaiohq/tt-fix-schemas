@@ -23,6 +23,13 @@ pnpm add @homaiohq/tt-fix-schemas
 ```
 
 Every schema change is published to npm as a new patch version (see [Releases](#releases)).
+To pin a specific TT schema version, use its tag as the npm dist-tag. It always points at the newest
+release containing that schema version:
+
+```sh
+pnpm add @homaiohq/tt-fix-schemas@uat-fix44-2026-08-03-25a722a
+```
+
 The package can also be installed straight from git, pinned to a schema tag; the `prepare` script
 then compiles `dist/` on install:
 
@@ -132,6 +139,8 @@ The `Sync TT FIX schemas` workflow (`.github/workflows/sync-schemas.yml`) runs d
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (GitHub Actions OIDC, no token
 stored in the repository). It runs on every `v*` tag push and is dispatched by the sync workflow.
 It refuses to run on anything but the `v<package.json version>` tag, or when that version already exists on npm.
+After publishing it points the npm dist-tag of every schema version contained in the release
+(e.g. `prod-fix44-2026-09-12-6a77bce`) at the new version.
 
 One-time setup, on npmjs.com, package **Settings → Trusted Publisher → GitHub Actions**:
 
@@ -141,6 +150,7 @@ One-time setup, on npmjs.com, package **Settings → Trusted Publisher → GitHu
 | Repository           | `tt-fix-schemas` |
 | Workflow filename    | `publish.yml`    |
 | Environment name     | *(empty)*        |
+| Allowed actions      | `npm publish`, `npm dist-tag` |
 
 The package must exist on npm before a trusted publisher can be configured, so the very first version is
 published by hand (`pnpm check && npm publish`) from a maintainer machine.

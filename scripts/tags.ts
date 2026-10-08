@@ -4,6 +4,7 @@
  *   pnpm tags            list tags and whether they exist
  *   pnpm tags --create   create missing annotated tags on HEAD
  *   pnpm tags --push     push the tags created in this run
+ *   pnpm tags --names    only print the tag names, one per line (no git access)
  *
  * Tag format: <env>-<fix>-<YYYY-MM-DD>-<git7>, e.g. prod-fix44-2026-09-12-6a77bce
  * (date and git hash come from the "TT FIX Version" comment of the schema file).
@@ -24,6 +25,7 @@ function git(...args: string[]): string {
 
 const create = process.argv.includes('--create');
 const push = process.argv.includes('--push');
+const namesOnly = process.argv.includes('--names');
 const created: string[] = [];
 
 for (const s of SOURCES) {
@@ -31,6 +33,10 @@ for (const s of SOURCES) {
   if (!fs.existsSync(xmlPath)) continue;
   const v = parseVersion(fs.readFileSync(xmlPath, 'utf8'));
   const tag = tagName(s, v);
+  if (namesOnly) {
+    console.log(tag);
+    continue;
+  }
   const exists = git('tag', '--list', tag) === tag;
   if (exists) {
     console.log(`exists   ${tag}`);
@@ -50,6 +56,6 @@ if (push && created.length) {
   console.log(`pushed   ${created.join(' ')}`);
 }
 
-if (process.env['GITHUB_OUTPUT']) {
+if (process.env['GITHUB_OUTPUT'] && !namesOnly) {
   fs.appendFileSync(process.env['GITHUB_OUTPUT'], `created=${JSON.stringify(created)}\n`);
 }
