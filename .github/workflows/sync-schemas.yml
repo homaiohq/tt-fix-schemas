@@ -1,0 +1,81 @@
+name: Sync TT FIX schemas
+
+# Fetch the latest TT FIX component schemas (prod + UAT, FIX 4.2 + 4.4) every day,
+# regenerate the TypeScript bindings, commit, and tag each schema version.
+
+on:
+  schedule:
+    - cron: '23 6 * * *' # daily, 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-schemas
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags are needed to know which versions already exist
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fetch schemas
+        id: fetch
+        run: pnpm fetch-schemas
+
+      - name: Regenerate TypeScript
+        run: pnpm generate
+
+      - name: Verify
+        run: |
+          pnpm typecheck
+          pnpm test
+          pnpm build
+
+      - name: Commit changes
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas src/generated
+          if git diff --cached --quiet; then
+            echo "No schema changes"
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "chore: sync TT FIX schemas ($(date -u +%Y-%m-%d))"
+              echo
+              echo "Changed: ${{ steps.fetch.outputs.changed }}"
+              echo
+              echo "${{ steps.fetch.outputs.summary }}"
+            } > /tmp/commit-msg
+            git commit -F /tmp/commit-msg
+            git push origin HEAD:${{ github.ref_name }}
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push missing tags
+        id: tags
+        run: pnpm tags --create --push
+
+      - name: Summary
+        run: |
+          {
+            echo "## TT FIX schemas"
+            echo
+            echo "${{ steps.fetch.outputs.summary }}"
+            echo
+            echo "Committed: ${{ steps.commit.outputs.committed }}"
+            echo
+            echo "Tags created: \`${{ steps.tags.outputs.created }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

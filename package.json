@@ -1,0 +1,65 @@
+{
+  "name": "@homaiohq/tt-fix-schemas",
+  "version": "0.0.0",
+  "description": "TypeScript types, tags and field values generated from the Trading Technologies TT FIX component schemas (FIX 4.2 / 4.4, production and UAT)",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/homaiohq/tt-fix-schemas.git"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./common": {
+      "types": "./dist/common.d.ts",
+      "default": "./dist/common.js"
+    },
+    "./prod/fix42": {
+      "types": "./dist/generated/prod/fix42/index.d.ts",
+      "default": "./dist/generated/prod/fix42/index.js"
+    },
+    "./prod/fix44": {
+      "types": "./dist/generated/prod/fix44/index.d.ts",
+      "default": "./dist/generated/prod/fix44/index.js"
+    },
+    "./uat/fix42": {
+      "types": "./dist/generated/uat/fix42/index.d.ts",
+      "default": "./dist/generated/uat/fix42/index.js"
+    },
+    "./uat/fix44": {
+      "types": "./dist/generated/uat/fix44/index.d.ts",
+      "default": "./dist/generated/uat/fix44/index.js"
+    },
+    "./schemas/*": "./schemas/*"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fetch-schemas": "tsx scripts/fetch-schemas.ts",
+    "generate": "tsx scripts/generate.ts",
+    "tags": "tsx scripts/tags.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "check": "pnpm typecheck && pnpm test",
+    "prepare": "pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "fast-xml-parser": "^5.2.5",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.12.1"
+}
