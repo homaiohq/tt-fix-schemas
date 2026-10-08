@@ -2,6 +2,7 @@
   "name": "@homaiohq/tt-fix-schemas",
   "version": "1.0.1",
   "description": "TypeScript types, tags and field values generated from the Trading Technologies TT FIX component schemas (FIX 4.2 / 4.4, production and UAT)",
+  "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",

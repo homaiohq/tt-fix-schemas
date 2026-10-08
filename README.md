@@ -174,3 +174,7 @@ scripts/tags.ts                   tag computation / creation
 src/common.ts                     shared types (Dictionary, FixFieldType, …)
 src/generated/<env>/<fix>/        generated modules (committed)
 ```
+
+## License
+
+[MIT](LICENSE). The TT FIX schema files themselves are published by Trading Technologies and remain subject to their terms.
