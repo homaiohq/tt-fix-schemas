@@ -18,13 +18,19 @@ Only the "New Component Schemas" are covered, not the legacy ones.
 
 ## Install
 
-The package is consumed straight from git, pinned to a schema tag:
+```sh
+pnpm add @homaiohq/tt-fix-schemas
+```
+
+Every schema change is published to npm as a new patch version (see [Releases](#releases)).
+The package can also be installed straight from git, pinned to a schema tag; the `prepare` script
+then compiles `dist/` on install:
 
 ```sh
 pnpm add github:homaiohq/tt-fix-schemas#prod-fix44-2026-09-12-6a77bce
 ```
 
-The `prepare` script compiles `dist/` on install. The raw XML files are shipped too, under `schemas/`.
+The raw XML files are shipped in the package too, under `schemas/`.
 
 ## Usage
 
@@ -115,8 +121,36 @@ The `Sync TT FIX schemas` workflow (`.github/workflows/sync-schemas.yml`) runs d
 
 1. downloads the four XML files and keeps those whose version comment changed,
 2. regenerates `src/generated/`, type-checks, tests and builds,
-3. commits `schemas/` + `src/generated/` to the default branch,
-4. creates and pushes any missing schema tag (idempotent, so the first run tags the versions already committed).
+3. if anything changed, bumps the package patch version and commits `schemas/` + `src/generated/` + `package.json`
+   to the default branch, tagged `v<version>`,
+4. creates and pushes any missing schema tag (idempotent, so the first run tags the versions already committed),
+5. dispatches the publish workflow for the new `v<version>` tag.
+
+## Releases
+
+`.github/workflows/publish.yml` publishes to the npm registry using
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (GitHub Actions OIDC, no token
+stored in the repository). It runs on every `v*` tag push and is dispatched by the sync workflow.
+It refuses to run on anything but the `v<package.json version>` tag, or when that version already exists on npm.
+
+One-time setup, on npmjs.com, package **Settings → Trusted Publisher → GitHub Actions**:
+
+| Field                | Value            |
+| -------------------- | ---------------- |
+| Organization or user | `homaiohq`       |
+| Repository           | `tt-fix-schemas` |
+| Workflow filename    | `publish.yml`    |
+| Environment name     | *(empty)*        |
+
+The package must exist on npm before a trusted publisher can be configured, so the very first version is
+published by hand (`pnpm check && npm publish`) from a maintainer machine.
+
+To cut a release by hand (e.g. after a generator change without schema change):
+
+```sh
+npm version patch        # or minor / major; commits and creates the v* tag
+git push --follow-tags   # the tag push triggers publish.yml
+```
 
 ## Development
 

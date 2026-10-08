@@ -1,11 +1,14 @@
 {
   "name": "@homaiohq/tt-fix-schemas",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "TypeScript types, tags and field values generated from the Trading Technologies TT FIX component schemas (FIX 4.2 / 4.4, production and UAT)",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/homaiohq/tt-fix-schemas.git"
+    "url": "git+https://github.com/homaiohq/tt-fix-schemas.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -61,5 +64,14 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "homepage": "https://github.com/homaiohq/tt-fix-schemas#readme",
+  "keywords": [
+    "fix",
+    "fix-protocol",
+    "trading-technologies",
+    "tt",
+    "typescript",
+    "schema"
+  ]
 }

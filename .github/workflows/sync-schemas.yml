@@ -1,7 +1,8 @@
 name: Sync TT FIX schemas
 
 # Fetch the latest TT FIX component schemas (prod + UAT, FIX 4.2 + 4.4) every day,
-# regenerate the TypeScript bindings, commit, and tag each schema version.
+# regenerate the TypeScript bindings, bump the package version, commit, tag each schema
+# version, and dispatch the publish workflow (npm trusted publishing) for the new version.
 
 on:
   schedule:
@@ -10,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # dispatch publish.yml
 
 concurrency:
   group: sync-schemas
@@ -42,7 +44,7 @@ jobs:
           pnpm test
           pnpm build
 
-      - name: Commit changes
+      - name: Bump version, commit and tag release
         id: commit
         run: |
           git config user.name "github-actions[bot]"
@@ -51,22 +53,33 @@ jobs:
           if git diff --cached --quiet; then
             echo "No schema changes"
             echo "committed=false" >> "$GITHUB_OUTPUT"
-          else
-            {
-              echo "chore: sync TT FIX schemas ($(date -u +%Y-%m-%d))"
-              echo
-              echo "Changed: ${{ steps.fetch.outputs.changed }}"
-              echo
-              echo "${{ steps.fetch.outputs.summary }}"
-            } > /tmp/commit-msg
-            git commit -F /tmp/commit-msg
-            git push origin HEAD:${{ github.ref_name }}
-            echo "committed=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          version="$(npm version patch --no-git-tag-version)"
+          git add package.json
+          {
+            echo "chore: sync TT FIX schemas ($(date -u +%Y-%m-%d), ${version})"
+            echo
+            echo "Changed: ${{ steps.fetch.outputs.changed }}"
+            echo
+            echo "${{ steps.fetch.outputs.summary }}"
+          } > /tmp/commit-msg
+          git commit -F /tmp/commit-msg
+          git tag -a "${version}" -m "${version}"
+          git push origin HEAD:${{ github.ref_name }} "${version}"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Create and push missing tags
+      - name: Create and push missing schema tags
         id: tags
         run: pnpm tags --create --push
+
+      - name: Publish to npm
+        # Tag pushes made with GITHUB_TOKEN do not trigger workflows, so dispatch publish.yml explicitly.
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish.yml --ref "${{ steps.commit.outputs.version }}"
 
       - name: Summary
         run: |
@@ -78,4 +91,6 @@ jobs:
             echo "Committed: ${{ steps.commit.outputs.committed }}"
             echo
             echo "Tags created: \`${{ steps.tags.outputs.created }}\`"
+            echo
+            echo "Release: ${{ steps.commit.outputs.version || 'none' }}"
           } >> "$GITHUB_STEP_SUMMARY"
